@@ -10,10 +10,10 @@ but it was no always feasible.
 1. Download this repository extract the files.
 2. Download the pretrained model from Zenodo and extract the zip-file https://zenodo.org/record/7837300#.ZD1OI9IzbUA.
 3. Install the repository 
-   4. Create a new virtual environment with `python3 -m venv /path/to/venv/nnunet` and repace the path with the location,
+   - Create a new virtual environment with `python3 -m venv /path/to/venv/nnunet` and repace the path with the location,
           where the virtual environment should be installed.
-   5. Activate the environment with `source  /path/to/venv/nnunet/bin/activate`.
-   6. Install the repository by entering `pip install -e /path/to/extraced/repository/nnunet_clavingfront` and replace the path.
+   - Activate the environment with `source  /path/to/venv/nnunet/bin/activate`.
+   - Install the repository by entering `pip install -e /path/to/extraced/repository/nnunet_clavingfront` and replace the path.
 7. Run the calving front prediction with `bash RUN_CALBINGFRONT_DETECTION.sh /path/to/SARimages/ /path/to/pretrained/model` and replace the paths
 with the path to the folder containing the SAR images and path to the pretrained model.
 
