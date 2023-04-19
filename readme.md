@@ -14,7 +14,7 @@ but it was no always feasible.
           where the virtual environment should be installed.
    - Activate the environment with `source  /path/to/venv/nnunet/bin/activate`.
    - Install the repository by entering `pip install -e /path/to/extraced/repository/nnunet_clavingfront` and replace the path.
-7. Run the calving front prediction with `bash RUN_CALBINGFRONT_DETECTION.sh /path/to/SARimages/ /path/to/pretrained/model` and replace the paths
+7. Run the calving front prediction with `bash RUN_CALBINGFRONT_DETECTION.sh -d /path/to/SARimages/ -m /path/to/pretrained/model` and replace the paths
 with the path to the folder containing the SAR images and path to the pretrained model.
 
 ## 1. Dataset
