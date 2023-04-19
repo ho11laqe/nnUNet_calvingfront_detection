@@ -6,10 +6,9 @@ import torch
 import os
 from batchgenerators.utilities.file_and_folder_operations import join, isdir, maybe_mkdir_p
 from data_processing.data_postprocessing import extract_front_from_zones
-import matplotlib.image as pltimage
 from PIL import Image
 import cv2
-import matplotlib.pyplot as plt
+
 
 
 def main(input_folder):
