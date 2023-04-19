@@ -1,11 +1,10 @@
 # Multi-Task Learning for Glacier Segmentation and Calving Front Prediction with the nnU-Net.
 
-This project contains the pytheon code fot the experiments in the Master's thesis of Oskar Herrmann.
-The project was build up on th ennU/Net project by Isensee, F., Jaeger, P. F. (2020). The folder that are new to the
-project are marked as xx_new.py. I tried to change a minimum number of original files and create new ones,
-but it was no always feasible.
+This project contains the script for the experiments that are described in the paper "Out-of-the-box calving front detection method using deep-learning" by Herrmann et al. 
+The project was build up on the nnU-Net project by Isensee, F., Jaeger, P. F. (2020) https://github.com/MIC-DKFZ/nnUNet. The folders that are new to the project are marked as "xx_new". I tried to change a minimum number of original files and create new ones, but it was no always feasible.
 
 ## Out-of-the-box claving front detection
+To apply the trained nnU-Net on a set of SAR images for claving front detection, follow the steps below:
 
 1. Download this repository extract the files https://github.com/ho11laqe/nnUNet_calvingfront_detection.git
 2. Download the pretrained model from Zenodo and extract the zip-file https://zenodo.org/record/7837300#.ZD1OI9IzbUA.
