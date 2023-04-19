@@ -1,6 +1,6 @@
 # Multi-Task Learning for Glacier Segmentation and Calving Front Prediction with the nnU-Net.
 
-This project contains the script for the experiments that are described in the paper "Out-of-the-box calving front detection method using deep-learning" by Herrmann et al. 
+This project contains the script for the experiments that are described in the paper "Out-of-the-box calving front detection method using deep-learning" by Herrmann et al. https://tc.copernicus.org/preprints/tc-2023-34/
 The project was build up on the nnU-Net project by Isensee, F., Jaeger, P. F. (2020) https://github.com/MIC-DKFZ/nnUNet. The folders that are new to the project are marked as "xx_new". I tried to change a minimum number of original files and create new ones, but it was no always feasible.
 
 ## Out-of-the-box claving front detection
