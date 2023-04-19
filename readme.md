@@ -7,7 +7,7 @@ but it was no always feasible.
 
 ## Out-of-the-box claving front detection
 
-1. Download this repository extract the files.
+1. Download this repository extract the files https://github.com/ho11laqe/nnUNet_calvingfront_detection.git
 2. Download the pretrained model from Zenodo and extract the zip-file https://zenodo.org/record/7837300#.ZD1OI9IzbUA.
 3. Install the repository 
    - Create a new virtual environment with `python3 -m venv /path/to/venv/nnunet` and repace the path with the location,
