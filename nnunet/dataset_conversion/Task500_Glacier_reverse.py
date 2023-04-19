@@ -13,9 +13,9 @@ import cv2
 
 def main(input_folder):
     files = os.listdir(input_folder)
-    output_folder = join(input_folder, 'pngs')
+    output_folder = join(input_folder, '../tifs')
     maybe_mkdir_p(output_folder)
-
+    os.rmdir(os.path.join(input_folder,'../nnUNet'))
     kernel = np.ones((7, 7), np.uint8)
     for file in files:
         if file.endswith('.gz'):
