@@ -9,7 +9,7 @@ To apply the trained nnU-Net on a set of SAR images for claving front detection,
 1. Download this repository extract the files https://github.com/ho11laqe/nnUNet_calvingfront_detection.git
 2. Download the pretrained model from Zenodo and extract the zip-file https://zenodo.org/record/7837300#.ZD1OI9IzbUA.
 3. Install the repository 
-   - Create a new virtual environment with `python3 -m venv /path/to/venv/nnunet` and repace the path with the location,
+   - Create a new virtual environment with `python3 -m venv /path/to/venv/nnunet` and replace the path with the location,
           where the virtual environment should be installed.
    - Activate the environment with `source  /path/to/venv/nnunet/bin/activate`.
    - Install the repository by entering `pip install -e /path/to/extraced/repository/nnunet_clavingfront` and replace the path.
