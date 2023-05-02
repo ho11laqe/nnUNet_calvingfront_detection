@@ -127,6 +127,7 @@ def main():
 
     args = parser.parse_args()
     input_folder = args.input_folder
+    print(input_folder)
     output_folder = args.output_folder
     part_id = args.part_id
     num_parts = args.num_parts

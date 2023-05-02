@@ -13,9 +13,9 @@ import cv2
 
 def main(input_folder):
     files = os.listdir(input_folder)
-    output_folder = join(input_folder, '../tifs')
+    output_folder = join(input_folder, '../pngs')
     maybe_mkdir_p(output_folder)
-    os.rmdir(os.path.join(input_folder,'../nnUNet'))
+    #os.rmdir(os.path.join(input_folder,'../nnUNet'))
     kernel = np.ones((7, 7), np.uint8)
     for file in files:
         if file.endswith('.gz'):
@@ -38,15 +38,17 @@ def main(input_folder):
             color_zone[glacier_dil == 1] = 127
 
             color_front = extract_front_from_zones(color_zone, 10)
-            color_front[color_front==255] =1
+            color_front[color_front==255] =255
 
-            output_path_zone = join(output_folder, file[:-len('.nii.gz')] + '_zone.tif')
-            output_path_front = join(output_folder, file[:-len('.nii.gz')] + '_front.tif')
+            output_path_zone = join(output_folder, file[:-len('.nii.gz')] + '_zone.png')
+            output_path_front = join(output_folder, file[:-len('.nii.gz')] + '_front.png')
 
-            img_zone = Image.fromarray(color_zone)
-            img_front = Image.fromarray(color_front)
-            img_zone.save(output_path_zone)
-            img_front.save(output_path_front)
+            cv2.imwrite(output_path_zone, color_zone)
+            cv2.imwrite(output_path_front, color_front)
+            #img_zone = Image.fromarray(color_zone)
+            #img_front = Image.fromarray(color_front)
+            #img_zone.save(output_path_zone)
+            #img_front.save(output_path_front)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
