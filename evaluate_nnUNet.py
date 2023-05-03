@@ -1,12 +1,14 @@
+import math
 from argparse import ArgumentParser
 import os
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, jaccard_score
-from data_processing.data_postprocessing import postprocess_zone_segmenation, postprocess_front_segmenation, extract_front_from_zones
+from data_processing.data_postprocessing import postprocess_zone_segmenation, postprocess_front_segmenation, \
+    extract_front_from_zones
 import torch.nn as nn
-#from segmentation_models_pytorch.losses.dice import DiceLoss
-#from PIL import Image
-#from models.front_segmentation_model import DistanceMapBCE
+# from segmentation_models_pytorch.losses.dice import DiceLoss
+# from PIL import Image
+# from models.front_segmentation_model import DistanceMapBCE
 import re
 from pathlib import Path
 import cv2
@@ -20,6 +22,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import plotly.io as pio
 import os
+
 pio.kaleido.scope.mathjax = None
 
 
@@ -102,7 +105,8 @@ def print_zone_metrics(metric_name, list_of_metrics):
     metrics = [metric for [metric, _, _, _, _] in list_of_metrics if not np.isnan(metric)]
     metrics_na = [metric_na for [_, metric_na, _, _, _] in list_of_metrics if not np.isnan(metric_na)]
     metrics_stone = [metric_stone for [_, _, metric_stone, _, _] in list_of_metrics if not np.isnan(metric_stone)]
-    metrics_glacier = [metric_glacier for [_, _, _, metric_glacier, _] in list_of_metrics if not np.isnan(metric_glacier)]
+    metrics_glacier = [metric_glacier for [_, _, _, metric_glacier, _] in list_of_metrics if
+                       not np.isnan(metric_glacier)]
     metrics_ocean = [metric_ocean for [_, _, _, _, metric_ocean] in list_of_metrics if not np.isnan(metric_ocean)]
     result = {}
     print(f"Average {metric_name}: {sum(metrics) / len(metrics)}")
@@ -110,13 +114,14 @@ def print_zone_metrics(metric_name, list_of_metrics):
     print(f"Average {metric_name} NA Area: {sum(metrics_na) / len(metrics_na)}")
     result[f'Average_{metric_name}_NA_Area'] = sum(metrics_na) / len(metrics_na)
     print(f"Average {metric_name} Stone: {sum(metrics_stone) / len(metrics_stone)}")
-    result[f"Average_{metric_name}_Stone"] =sum(metrics_stone) / len(metrics_stone)
+    result[f"Average_{metric_name}_Stone"] = sum(metrics_stone) / len(metrics_stone)
     print(f"Average {metric_name} Glacier: {sum(metrics_glacier) / len(metrics_glacier)}")
     result[f"Average_{metric_name}_Glacier"] = sum(metrics_glacier) / len(metrics_glacier)
     print(f"Average {metric_name} Ocean and Ice Melange: {sum(metrics_ocean) / len(metrics_ocean)}")
     result[f"Average_{metric_name}_Ocean_and_Ice_Melange"] = sum(metrics_ocean) / len(metrics_ocean)
 
     return result
+
 
 def print_front_metric(name, metric):
     result = {}
@@ -137,11 +142,15 @@ def mask_prediction_with_bounding_box(post_complete_predicted_mask, file_name, b
     # Make sure the Bounding Box coordinates are within the image
     if left_upper_corner_x < 0: left_upper_corner_x = 0
     if left_lower_corner_x < 0: left_lower_corner_x = 0
-    if right_upper_corner_x > len(post_complete_predicted_mask[0]): right_upper_corner_x = len(post_complete_predicted_mask[0]) - 1
-    if right_lower_corner_x > len(post_complete_predicted_mask[0]): right_lower_corner_x = len(post_complete_predicted_mask[0]) - 1
-    if left_upper_corner_y > len(post_complete_predicted_mask): left_upper_corner_y = len(post_complete_predicted_mask) - 1
+    if right_upper_corner_x > len(post_complete_predicted_mask[0]): right_upper_corner_x = len(
+        post_complete_predicted_mask[0]) - 1
+    if right_lower_corner_x > len(post_complete_predicted_mask[0]): right_lower_corner_x = len(
+        post_complete_predicted_mask[0]) - 1
+    if left_upper_corner_y > len(post_complete_predicted_mask): left_upper_corner_y = len(
+        post_complete_predicted_mask) - 1
     if left_lower_corner_y < 0: left_lower_corner_y = 0
-    if right_upper_corner_y > len(post_complete_predicted_mask): right_upper_corner_y = len(post_complete_predicted_mask) - 1
+    if right_upper_corner_y > len(post_complete_predicted_mask): right_upper_corner_y = len(
+        post_complete_predicted_mask) - 1
     if right_lower_corner_y < 0: right_lower_corner_y = 0
 
     # remember cv2 images have the shape (height, width)
@@ -154,27 +163,29 @@ def mask_prediction_with_bounding_box(post_complete_predicted_mask, file_name, b
 
 
 def post_processing(target_masks, complete_predicted_masks, bounding_boxes_directory, complete_test_directory):
-    meter_threshold = 750     # in meter
+    meter_threshold = 750  # in meter
     print("Post-processing ...\n\n")
     for file_name in complete_predicted_masks:
         prediction_name = file_name
         if file_name.endswith('_zone.png'):
             file_name = file_name[:-len("_zone.png")] + ".png"
         if file_name.endswith('_front.png'):
-            file_name = file_name[:-len("front.png")] +".png"
+            file_name = file_name[:-len("front.png")] + ".png"
 
         print(f"File: {file_name}")
         resolution = int(os.path.split(file_name)[1][:-4].split('_')[-3])
         # pixel_threshold (pixel) * resolution (m/pixel) = meter_threshold (m)
         pixel_threshold = meter_threshold / resolution
-        complete_predicted_mask = cv2.imread(os.path.join(complete_test_directory, prediction_name).__str__(), cv2.IMREAD_GRAYSCALE)
+        complete_predicted_mask = cv2.imread(os.path.join(complete_test_directory, prediction_name).__str__(),
+                                             cv2.IMREAD_GRAYSCALE)
 
         if target_masks == "zones":
             post_complete_predicted_mask = postprocess_zone_segmenation(complete_predicted_mask)
             post_complete_predicted_mask = extract_front_from_zones(post_complete_predicted_mask, pixel_threshold)
         else:
             complete_predicted_mask_class_labels = turn_colors_to_class_labels_front(complete_predicted_mask)
-            post_complete_predicted_mask = postprocess_front_segmenation(complete_predicted_mask_class_labels, pixel_threshold)
+            post_complete_predicted_mask = postprocess_front_segmenation(complete_predicted_mask_class_labels,
+                                                                         pixel_threshold)
             post_complete_predicted_mask = post_complete_predicted_mask * 255
 
         post_complete_predicted_mask = mask_prediction_with_bounding_box(post_complete_predicted_mask, file_name,
@@ -182,7 +193,8 @@ def post_processing(target_masks, complete_predicted_masks, bounding_boxes_direc
         cv2.imwrite(os.path.join(complete_postprocessed_test_directory, file_name), post_complete_predicted_mask)
 
 
-def calculate_front_delineation_metric(complete_postprocessed_test_directory, post_processed_predicted_masks, directory_of_target_fronts, bounding_boxes_directory):
+def calculate_front_delineation_metric(complete_postprocessed_test_directory, post_processed_predicted_masks,
+                                       directory_of_target_fronts, bounding_boxes_directory):
     list_of_mean_front_errors = []
     list_of_median_front_errors = []
     list_of_all_front_errors = []
@@ -205,7 +217,9 @@ def calculate_front_delineation_metric(complete_postprocessed_test_directory, po
         target_front_class_labels = turn_colors_to_class_labels_front(target_front)
 
         if file_name.endswith('_front.png'):
-            post_processed_predicted_mask_class_labels = mask_prediction_with_bounding_box(post_processed_predicted_mask_class_labels, file_name[:-len('_front.png')]+'.png', bounding_boxes_directory)
+            post_processed_predicted_mask_class_labels = mask_prediction_with_bounding_box(
+                post_processed_predicted_mask_class_labels, file_name[:-len('_front.png')] + '.png',
+                bounding_boxes_directory)
             post_processed_predicted_mask_class_labels = skeletonize(post_processed_predicted_mask_class_labels)
         front_is_present_flag, mean_error, median_error, errors = front_error(
             post_processed_predicted_mask_class_labels, target_front_class_labels)
@@ -219,16 +233,21 @@ def calculate_front_delineation_metric(complete_postprocessed_test_directory, po
     print(f"Number of images with no predicted front: {number_of_images_with_no_predicted_front}")
     results["Number_no_front"] = number_of_images_with_no_predicted_front
     if number_of_images_with_no_predicted_front >= len(post_processed_predicted_masks):
-        print(f"Number of images with no predicted front is equal to complete set of images. No metrics can be calculated.")
+        print(
+            f"Number of images with no predicted front is equal to complete set of images. No metrics can be calculated.")
         return [], {}
     list_of_mean_front_errors_without_nan = [front_error for front_error in list_of_mean_front_errors if
                                              not np.isnan(front_error)]
     list_of_median_front_errors_without_nan = [front_error for front_error in list_of_median_front_errors if
                                                not np.isnan(front_error)]
-    print(f"Mean-mean distance error (in meters): {sum(list_of_mean_front_errors_without_nan) / len(list_of_mean_front_errors_without_nan)}")
-    results["Mean_mean_distance"] = sum(list_of_mean_front_errors_without_nan) / len(list_of_mean_front_errors_without_nan)
-    print(f"Mean-median distance error (in meters): {sum(list_of_median_front_errors_without_nan) / len(list_of_median_front_errors_without_nan)}")
-    results["Mean_median_distance"] = sum(list_of_median_front_errors_without_nan) / len(list_of_median_front_errors_without_nan)
+    print(
+        f"Mean-mean distance error (in meters): {sum(list_of_mean_front_errors_without_nan) / len(list_of_mean_front_errors_without_nan)}")
+    results["Mean_mean_distance"] = sum(list_of_mean_front_errors_without_nan) / len(
+        list_of_mean_front_errors_without_nan)
+    print(
+        f"Mean-median distance error (in meters): {sum(list_of_median_front_errors_without_nan) / len(list_of_median_front_errors_without_nan)}")
+    results["Mean_median_distance"] = sum(list_of_median_front_errors_without_nan) / len(
+        list_of_median_front_errors_without_nan)
 
     list_of_mean_front_errors_without_nan = np.array(list_of_mean_front_errors_without_nan)
     list_of_median_front_errors_without_nan = np.array(list_of_median_front_errors_without_nan)
@@ -250,6 +269,7 @@ def calculate_front_delineation_metric(complete_postprocessed_test_directory, po
     results['mean'] = mean
     results['standard_deviation'] = std
     return list_of_mean_front_errors_without_nan, results
+
 
 def calculate_segmentation_metrics(target_mask_modality, complete_predicted_masks, complete_test_directory,
                                    directory_of_complete_targets):
@@ -315,17 +335,18 @@ def calculate_segmentation_metrics(target_mask_modality, complete_predicted_mask
         if len(list_of_f1_scores):
             result_f1 = print_front_metric("F1 Score", list_of_f1_scores)
             result["Front_F1"] = result_f1
-        if len(list_of_ious)>0:
+        if len(list_of_ious) > 0:
             result_iou = print_front_metric("IoU", list_of_ious)
             result["Front_IoU"] = result_iou
 
     return result
 
+
 def check_whether_winter_half_year(name):
     split_name = name[:-4].split('_')
     if split_name[0] == "COL" or split_name[0] == "JAC":
         nord_halbkugel = True
-    else:                                                   # Jorum, Maple, Crane, SI, DBE
+    else:  # Jorum, Maple, Crane, SI, DBE
         nord_halbkugel = False
     month = int(split_name[1].split('-')[1])
     if nord_halbkugel:
@@ -341,10 +362,12 @@ def check_whether_winter_half_year(name):
     return winter
 
 
-def front_delineation_metric(modality, complete_postprocessed_test_directory, directory_of_target_fronts, bounding_boxes_directory):
+def front_delineation_metric(modality, complete_postprocessed_test_directory, directory_of_target_fronts,
+                             bounding_boxes_directory):
     print("Calculating distance errors ...\n\n")
     if modality == 'front':
-        post_processed_predicted_masks = list(file for file in os.listdir(complete_postprocessed_test_directory) if file.endswith('_front.png'))
+        post_processed_predicted_masks = list(
+            file for file in os.listdir(complete_postprocessed_test_directory) if file.endswith('_front.png'))
 
     elif modality == 'zone':
         post_processed_predicted_masks = list(file for file in os.listdir(complete_postprocessed_test_directory))
@@ -353,12 +376,16 @@ def front_delineation_metric(modality, complete_postprocessed_test_directory, di
     print("####################################################################")
     print(f"# Results for all images")
     print("####################################################################")
-    fig = px.box(None, points="all", template="plotly_white", log_x=True, height=300)
-    G10 = px.colors.qualitative.G10
+    fig = px.box(None, points="all", template="none", log_x=True, height=300, )
+    G10 = px.colors.qualitative.Safe
     width = 0.5
-    list_of_mean_front_errors_without_nan, result_all = calculate_front_delineation_metric(complete_postprocessed_test_directory, post_processed_predicted_masks, directory_of_target_fronts, bounding_boxes_directory)
-    np.savetxt(os.path.join(complete_postprocessed_test_directory, os.pardir, "distance_errors.txt"), list_of_mean_front_errors_without_nan)
-    fig.add_trace(go.Box(x=list_of_mean_front_errors_without_nan, marker_color='orange', boxmean=True, boxpoints='all', name='all', width=width))
+    list_of_mean_front_errors_without_nan, result_all = calculate_front_delineation_metric(
+        complete_postprocessed_test_directory, post_processed_predicted_masks, directory_of_target_fronts,
+        bounding_boxes_directory)
+    np.savetxt(os.path.join(complete_postprocessed_test_directory, os.pardir, "distance_errors.txt"),
+               list_of_mean_front_errors_without_nan)
+    fig.add_trace(go.Box(x=list_of_mean_front_errors_without_nan, marker_color='orange', boxmean=True, boxpoints='all',
+                         name='all', width=width))
 
     results = {}
     results['Result_all'] = result_all
@@ -375,56 +402,176 @@ def front_delineation_metric(modality, complete_postprocessed_test_directory, di
             if (winter and season == "summer") or (not winter and season == "winter"):
                 continue
             subset_of_predictions.append(file_name)
+
         if len(subset_of_predictions) == 0: continue
-        all_errors, result_season = calculate_front_delineation_metric(complete_postprocessed_test_directory, subset_of_predictions, directory_of_target_fronts, bounding_boxes_directory)
+        all_errors, result_season = calculate_front_delineation_metric(complete_postprocessed_test_directory,
+                                                                       subset_of_predictions,
+                                                                       directory_of_target_fronts,
+                                                                       bounding_boxes_directory)
         if season == 'winter':
-            color = G10[9]
+            color = G10[0]
         else:
-            color = G10[8]
+            color = G10[9]
         print(season, np.mean(all_errors), np.std(all_errors))
-        fig.add_trace(go.Box(x=all_errors, marker_color=color, boxmean=True, boxpoints='all', name=season, width=width, legendrank=0))
+        fig.add_trace(go.Box(x=all_errors, marker_color=color, boxmean=True, boxpoints='all', name=season, width=width,
+                             legendrank=0))
 
         results[season] = result_season
     fig.update_layout(showlegend=False, font=dict(family="Times New Roma", size=12))
-    fig.update_xaxes(title='front delineation error (m)')
-    fig.update_layout(yaxis={'categoryorder':'array', 'categoryarray':['summer','winter','all']})
+    fig.update_xaxes(title='Mean Distance Error [m]')
+    fig.update_layout(yaxis={'categoryorder': 'array', 'categoryarray': ['summer', 'winter', 'all']})
     fig.update_traces(orientation='h')  # horizontal box plots
-    fig.write_image("create_plots_new/output/error_season.pdf", format='pdf')
 
+    # Front Gourmelon
+    fig.add_shape(type='line', x0=738, y0=-0.5, x1=738, y1=0.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=1054, y0=0.5, x1=1054, y1=1.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=887, y0=1.5, x1=887, y1=2.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    # Zone Gourmelon
+    fig.add_shape(type='line', x0=732, y0=-0.5, x1=732, y1=0.5, line=dict(color='gray', ), xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=776, y0=0.5, x1=776, y1=1.5, line=dict(color='gray', ), xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=753, y0=1.5, x1=753, y1=2.5, line=dict(color='gray', ), xref='x', yref='y')
+
+    fig.add_annotation(
+        dict(font=dict(color='gray', size=10), x=2.88, y=2.37, showarrow=False, text="Zone (Gourmelon et al.)  ",
+             textangle=0, xanchor='left', xref="x", yref="y"))
+    fig.add_annotation(
+        dict(font=dict(color='lightgray', size=10), x=2.96, y=2, showarrow=False, text="Front (Gourmelon et al.) ",
+             textangle=0, xanchor='left', xref="x", yref="y"))
+    fig.write_image("create_plots_new/output/error_season_%s.pdf"%modality, format='pdf')
 
     # Glacier subsetting
-    fig = px.box(None, points="all", template="plotly_white", log_x=True, height=300)
-    fig.add_trace(go.Box(x=list_of_mean_front_errors_without_nan, marker_color='orange', boxmean=True, boxpoints='all', name='all', width=width,legendrank=7))
-    color = {'COL': G10[3], 'Mapple': G10[4]}
+    fig = px.box(None, points="all", template="plotly_white", log_x=True, height=400)
+    fig.add_trace(go.Box(x=list_of_mean_front_errors_without_nan, marker_color='orange', boxmean=True, boxpoints='all',
+                         name='all', width=width, legendrank=7))
+    color = {'Columbia': G10[7], 'Mapple': G10[8]}
     for glacier in ["Mapple", "COL", "Crane", "DBE", "JAC", "Jorum", "SI"]:
-        print("")
-        print("####################################################################")
-        print(f"# Results for only images from {glacier}")
-        print("####################################################################")
         subset_of_predictions = []
         for file_name in post_processed_predicted_masks:
+
             if not file_name[:-4].split('_')[0] == glacier:
                 continue
             subset_of_predictions.append(file_name)
         if len(subset_of_predictions) == 0: continue
-        all_errors, result_glacier = calculate_front_delineation_metric(complete_postprocessed_test_directory,subset_of_predictions, directory_of_target_fronts, bounding_boxes_directory)
+        all_errors, result_glacier = calculate_front_delineation_metric(complete_postprocessed_test_directory,
+                                                                        subset_of_predictions,
+                                                                        directory_of_target_fronts,
+                                                                        bounding_boxes_directory)
         print(glacier, np.mean(all_errors), np.std(all_errors))
+        if glacier == "COL":
+            glacier = "Columbia"
         fig.add_trace(
-            go.Box(x=all_errors, marker_color=color[glacier], boxmean=True, boxpoints='all', name=glacier, width=width, ))
-        results[glacier] = {}
-        results[glacier]['all'] = result_glacier
+            go.Box(x=all_errors, marker_color=color[glacier], boxmean=True, boxpoints='all', name=glacier,
+                   width=width, ))
+        for season in ['winter', 'summer']:
+            print("")
+            print("####################################################################")
+            print(f"# Results for only images from {glacier}")
+            print("####################################################################")
+            subset_of_predictions = []
+            for file_name in post_processed_predicted_masks:
+                if glacier == "Columbia":
+                    glacier = "COL"
+                if not file_name[:-4].split('_')[0] == glacier:
+                    continue
+                winter = check_whether_winter_half_year(file_name)
+                if (winter and season == "summer") or (not winter and season == "winter"):
+                    continue
+                subset_of_predictions.append(file_name)
+            if len(subset_of_predictions) == 0: continue
+            all_errors, result_glacier = calculate_front_delineation_metric(complete_postprocessed_test_directory,
+                                                                            subset_of_predictions,
+                                                                            directory_of_target_fronts,
+                                                                            bounding_boxes_directory)
+            print(glacier, np.mean(all_errors), np.std(all_errors))
+            if glacier == "COL":
+                season = " " + season
+                glacier = "Columbia"
+            fig.add_trace(
+                go.Box(x=all_errors, marker_color=color[glacier], boxmean=True, boxpoints='all',
+                       name=season + "_" + glacier,
+                       width=width, ))
+            results[glacier] = {}
+            results[glacier]['all'] = result_glacier
+    # Front Gourmelon
+    offset = 0
+
+    fig.add_shape(type='line', x0=140, y0=-0.5 + offset, x1=140, y1=0.5 + offset, line=dict(color='lightgray', ),
+                  xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=173, y0=0.5 + offset, x1=173, y1=1.5 + offset, line=dict(color='lightgray', ),
+                  xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=150, y0=1.5 + offset, x1=150, y1=2.5 + offset, line=dict(color='lightgray', ),
+                  xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=907, y0=2.5 + offset, x1=907, y1=3.5 + offset, line=dict(color='lightgray', ),
+                  xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=1157, y0=3.5 + offset, x1=1157, y1=4.5 + offset, line=dict(color='lightgray', ),
+                  xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=1032, y0=4.5 + offset, x1=1032, y1=5.5 + offset, line=dict(color='lightgray', ),
+                  xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=887, y0=5.5 + offset, x1=887, y1=6.5 + offset, line=dict(color='lightgray', ),
+                  xref='x', yref='y')
+
+    fig.add_shape(type='line', x0=262, y0=-0.5 + offset, x1=262, y1=0.5 + offset, line=dict(color='gray', ), xref='x',
+                  yref='y')
+
+    fig.add_shape(type='line', x0=340, y0=0.5 + offset, x1=340, y1=1.5 + offset, line=dict(color='gray', ), xref='x',
+                  yref='y')
+
+    fig.add_shape(type='line', x0=287, y0=1.5 + offset, x1=287, y1=2.5 + offset, line=dict(color='gray', ), xref='x',
+                  yref='y')
+
+    fig.add_shape(type='line', x0=854, y0=2.5 + offset, x1=854, y1=3.5 + offset, line=dict(color='gray', ), xref='x',
+                  yref='y')
+
+    fig.add_shape(type='line', x0=826, y0=3.5 + offset, x1=826, y1=4.5 + offset, line=dict(color='gray', ), xref='x',
+                  yref='y')
+
+    fig.add_shape(type='line', x0=840, y0=4.5 + offset, x1=840, y1=5.5 + offset, line=dict(color='gray', ), xref='x',
+                  yref='y')
+
+    fig.add_shape(type='line', x0=753, y0=5.5 + offset, x1=753, y1=6.5 + offset, line=dict(color='gray', ), xref='x',
+                  yref='y')
+
+    fig.add_annotation(dict(font=dict(color='gray', size=10), x=2.88, y=6.37 + offset, showarrow=False,
+                            text="Zone (Gourmelon et al.)  ",
+                            textangle=0, xanchor='left', xref="x", yref="y"))
+    fig.add_annotation(dict(font=dict(color='lightgray', size=10), x=2.96, y=6 + offset, showarrow=False,
+                            text="Front (Gourmelon et al.) ",
+                            textangle=0, xanchor='left', xref="x", yref="y"))
+
     fig.update_layout(showlegend=False, font=dict(family="Times New Roma", size=12))
-    fig.update_xaxes(title='front delineation error (m)')
-    fig.update_layout(yaxis={'categoryorder':'array', 'categoryarray':['Mapple', 'COL', 'all']})
+    fig.update_xaxes(title='Mean Distance Error [m]')
+    fig.update_layout(yaxis={'categoryorder': 'array',
+                             'categoryarray': ['summer_Mapple', 'winter_Mapple', 'Mapple', ' summer_Columbia', ' winter_Columbia', 'Columbia', 'all'],
+                             'range': [-.5, 6.5]},
+
+                      xaxis={'showgrid': True, "showline": True,
+                             "tickvals": [10,20,50,100,200,500,1000,2000,5000],
+                             })
+
     fig.update_traces(orientation='h')  # horizontal box plots
-    fig.write_image("create_plots_new/output/error_glacier.pdf", format='pdf')
+    fig.write_image("create_plots_new/output/error_glacier_%s.pdf"%modality, format='pdf')
 
-    color = {'ERS': G10[9], 'RSAT': G10[1], 'ENVISAT': G10[8], 'PALSAR':G10[3], 'TSX':G10[4], 'TDX':G10[5], 'S1':G10[6]}
     # Sensor subsetting
-    fig = px.box(None, points="all", template="plotly_white", log_x=True, height=500)
-    fig.add_trace(go.Box(x=list_of_mean_front_errors_without_nan, marker_color='orange', boxmean=True, boxpoints='all', name='all', width=width))
+    color = {'ERS': G10[0], 'RSAT': G10[1], 'ENVISAT': G10[2], 'PALSAR': G10[3],
+             'TDX': G10[5], 'Columbia_TDX': G10[5], 'Mapple_TDX': G10[5], 'Columbia_S1': G10[5], 'Mapple_S1': G10[5],
+             'S1': G10[6]}
+    fig = px.box(None, points="all", template="plotly_white", log_x=True, height=550)
+    fig.add_trace(go.Box(x=list_of_mean_front_errors_without_nan, marker_color='orange', boxmean=True, boxpoints='all',
+                         name='all', width=width))
+    all_errors_TDXTSX = np.array([])
+    for sensor in ["RSAT", "S1", "ENVISAT", "ERS", "PALSAR", "TDX", "TSX"]:
 
-    for sensor in ["RSAT", "S1", "ENVISAT", "ERS", "PALSAR", "TSX", "TDX"]:
         print("")
         print("####################################################################")
         print(f"# Results for only images from {sensor}")
@@ -434,22 +581,125 @@ def front_delineation_metric(modality, complete_postprocessed_test_directory, di
             if not file_name[:-4].split('_')[2] == sensor:
                 continue
             subset_of_predictions.append(file_name)
+
         if len(subset_of_predictions) == 0: continue
-        all_errors, result_sensor = calculate_front_delineation_metric(complete_postprocessed_test_directory,subset_of_predictions, directory_of_target_fronts, bounding_boxes_directory)
+
+        all_errors, result_sensor = calculate_front_delineation_metric(complete_postprocessed_test_directory,
+                                                                       subset_of_predictions,
+                                                                       directory_of_target_fronts,
+                                                                       bounding_boxes_directory)
         print(sensor, np.mean(all_errors), np.std(all_errors))
-        fig.add_trace(
-            go.Box(x=all_errors,  marker_color=color[sensor], boxmean=True, boxpoints='all', name=sensor, width=width))
+        if sensor == "TSX":
+            sensor = "Mapple_TDX"
+            all_errors_TDXTSX = np.append(all_errors_TDXTSX, all_errors)
+
+        if sensor == "TDX":
+            sensor = 'Columbia_TDX'
+            all_errors_TDXTSX = np.append(all_errors_TDXTSX, all_errors)
+
+        fig.add_trace(go.Box(x=all_errors, marker_color=color[sensor], boxmean=True, boxpoints='all', name=sensor,
+                             width=width))
+
         results[sensor] = result_sensor
-    fig.update_layout(showlegend=False, font=dict(family="Times New Roma", size=12))
-    fig.update_xaxes(title='front delineation error (m)')
-    fig.update_layout(yaxis={'categoryorder':'array', 'categoryarray':[ 'S1','TDX','TSX','PALSAR', 'ENVISAT', 'ERS','all']})
+
+        if sensor == "S1":
+            subset_of_predictions_Mapple = []
+            subset_of_predictions_COL = []
+            for file_name in subset_of_predictions:
+                if file_name[:-4].split('_')[0] == "Mapple":
+                    subset_of_predictions_Mapple.append(file_name)
+                if file_name[:-4].split('_')[0] == "COL":
+                    subset_of_predictions_COL.append(file_name)
+            all_errors_mapple, result_sensor_mapple = calculate_front_delineation_metric(
+                complete_postprocessed_test_directory,
+                subset_of_predictions_Mapple,
+                directory_of_target_fronts,
+                bounding_boxes_directory)
+            all_errors_COL, result_sensor_COL = calculate_front_delineation_metric(
+                complete_postprocessed_test_directory,
+                subset_of_predictions_COL,
+                directory_of_target_fronts,
+                bounding_boxes_directory)
+            fig.add_trace(
+                go.Box(x=all_errors_COL, marker_color=color['S1'], boxmean=True, boxpoints='all', name='Columbia_S1',
+                       width=width))
+            fig.add_trace(
+                go.Box(x=all_errors_mapple, marker_color=color['S1'], boxmean=True, boxpoints='all', name='Mapple_S1',
+                       width=width))
+    fig.add_trace(
+        go.Box(x=all_errors_TDXTSX, marker_color=color['TDX'], boxmean=True, boxpoints='all', name='TDX', width=width))
+
+    MDE_all = 753
+    fig.add_shape(type='line', x0=MDE_all, y0=8.5, x1=MDE_all, y1=9.5, line=dict(color='gray', ), xref='x', yref='y')
+    fig.add_annotation(dict(font=dict(color='gray', size=10), x=2.88, y=9.37 + offset, showarrow=False,
+                            text="Zone (Gourmelon et al.)  ",
+                            textangle=0, xanchor='left', xref="x", yref="y"))
+    fig.add_annotation(dict(font=dict(color='lightgray', size=10), x=2.96, y=9 + offset, showarrow=False,
+                            text="Front (Gourmelon et al.) ",
+                            textangle=0, xanchor='left', xref="x", yref="y"))
+    fig.add_shape(type='line', x0=887, y0=8.5, x1=887, y1=9.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    MDE_s1_mapple = 141
+    fig.add_shape(type='line', x0=MDE_s1_mapple, y0=-0.5, x1=MDE_s1_mapple, y1=0.5, line=dict(color='gray', ), xref='x',
+                  yref='y')
+    fig.add_shape(type='line', x0=206, y0=-0.5, x1=206, y1=0.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    MDE_s1_col = 2587
+    fig.add_shape(type='line', x0=MDE_s1_col, y0=0.5, x1=MDE_s1_col, y1=1.5, line=dict(color='gray', ), xref='x',
+                  yref='y')
+    fig.add_shape(type='line', x0=3537, y0=0.5, x1=3537, y1=1.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    MDE_s1 = 2201
+    fig.add_shape(type='line', x0=MDE_s1, y0=1.5, x1=MDE_s1, y1=2.5, line=dict(color='gray', ), xref='x',
+                  yref='y')
+    fig.add_shape(type='line', x0=2806, y0=1.5, x1=2806, y1=2.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    MDE_TDX_mapple = 246
+    fig.add_shape(type='line', x0=MDE_TDX_mapple, y0=2.5, x1=MDE_TDX_mapple, y1=3.5, line=dict(color='gray', ),
+                  xref='x', yref='y')
+    fig.add_shape(type='line', x0=129, y0=2.5, x1=129, y1=3.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    MDE_TDX_col = 587
+    fig.add_shape(type='line', x0=MDE_TDX_col, y0=3.5, x1=MDE_TDX_col, y1=4.5, line=dict(color='gray', ),
+                  xref='x', yref='y')
+    fig.add_shape(type='line', x0=744, y0=3.5, x1=744, y1=4.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    MDE_TDX = 547
+    fig.add_shape(type='line', x0=MDE_TDX, y0=4.5, x1=MDE_TDX, y1=5.5, line=dict(color='gray', ),
+                  xref='x', yref='y')
+    fig.add_shape(type='line', x0=663, y0=4.5, x1=663, y1=5.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    MDE_palsar = 437
+    fig.add_shape(type='line', x0=MDE_palsar, y0=5.5, x1=MDE_palsar, y1=6.5, line=dict(color='gray', ), xref='x',
+                  yref='y')
+    fig.add_shape(type='line', x0=197, y0=5.5, x1=197, y1=6.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    MDE_envisat = 493
+    fig.add_shape(type='line', x0=MDE_envisat, y0=6.5, x1=MDE_envisat, y1=7.5, line=dict(color='gray', ), xref='x',
+                  yref='y')
+    fig.add_shape(type='line', x0=191, y0=6.5, x1=191, y1=7.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    MDE_ers = 437
+    fig.add_shape(type='line', x0=MDE_ers, y0=7.5, x1=MDE_ers, y1=8.5, line=dict(color='gray', ), xref='x', yref='y')
+    fig.add_shape(type='line', x0=127, y0=7.5, x1=127, y1=8.5, line=dict(color='lightgray', ), xref='x', yref='y')
+
+    fig.update_layout(showlegend=False, font=dict(family="Times New Roma", size=12, color="black"))
+    fig.update_xaxes(title='Mean Distance Error [m]')
+    fig.update_layout(
+        yaxis={'categoryorder': 'array',
+               'categoryarray': ['Mapple_S1', 'Columbia_S1', 'S1', 'Mapple_TDX', 'Columbia_TDX', 'TDX', 'PALSAR',
+                                 'ENVISAT', 'ERS', 'all'], 'range': [-.5, 10.5]},
+        xaxis={'showgrid': True, "showline": True,
+                "tickvals": [10,20,50,100,200,500,1000,2000,5000]})
+
     fig.update_traces(orientation='h')  # horizontal box plots
-    fig.write_image("create_plots_new/output/error_satellite.pdf", format='pdf')
-    exit()
+    fig.write_image("create_plots_new/output/error_satellite_%s.pdf"%modality, format='pdf')
+
     # Resolution subsetting
     fig = px.box(None, points="all", template="plotly_white", log_x=True)
-    fig.add_trace(go.Box(x=list_of_mean_front_errors_without_nan, marker_color='orange', boxmean=True, boxpoints='all', name='all', width=width))
-    color ={20: G10[9], 17:G10[8], 7:G10[3]}
+    fig.add_trace(go.Box(x=list_of_mean_front_errors_without_nan, marker_color='orange', boxmean=True, boxpoints='all',
+                         name='all', width=width))
+    color = {20: G10[9], 17: G10[8], 7: G10[3]}
     for res in [20, 17, 7]:
         print("")
         print("####################################################################")
@@ -461,18 +711,20 @@ def front_delineation_metric(modality, complete_postprocessed_test_directory, di
                 continue
             subset_of_predictions.append(file_name)
         if len(subset_of_predictions) == 0: continue
-        all_errors, result_res = calculate_front_delineation_metric(complete_postprocessed_test_directory,subset_of_predictions, directory_of_target_fronts, bounding_boxes_directory)
+        all_errors, result_res = calculate_front_delineation_metric(complete_postprocessed_test_directory,
+                                                                    subset_of_predictions, directory_of_target_fronts,
+                                                                    bounding_boxes_directory)
         fig.add_trace(
-            go.Box(x=all_errors,  marker_color=color[res], boxmean=True, boxpoints='all', name=res, width=width))
+            go.Box(x=all_errors, marker_color=color[res], boxmean=True, boxpoints='all', name=res, width=width))
         results[res] = result_res
     fig.update_layout(showlegend=False, font=dict(family="Times New Roma", size=12))
-    fig.update_xaxes(title='front delineation error (m)')
-    fig.update_layout(yaxis={'categoryorder':'array', 'categoryarray':['7', '17', '20','all']})
+    fig.update_xaxes(title='Mean Distance Error [m]')
+    fig.update_layout(yaxis={'categoryorder': 'array', 'categoryarray': ['7', '17', '20', 'all']})
     fig.update_traces(orientation='h')  # horizontal box plots
-    fig.write_image("create_plots_new/output/error_resolution.pdf", format='pdf')
+    fig.write_image("create_plots_new/output/error_resolution_%s.pdf"%modality, format='pdf')
 
     # Season and glacier subsetting
-    for glacier in ["Mapple", "COL", "Crane", "DBE", "JAC", "Jorum", "SI"]:
+    for glacier in ["Mapple", "Columbia", "Crane", "DBE", "JAC", "Jorum", "SI"]:
         for season in ["winter", "summer"]:
             print("")
             print("####################################################################")
@@ -487,10 +739,14 @@ def front_delineation_metric(modality, complete_postprocessed_test_directory, di
                     continue
                 subset_of_predictions.append(file_name)
             if len(subset_of_predictions) == 0: continue
-            _, results_gla_season = calculate_front_delineation_metric(complete_postprocessed_test_directory, subset_of_predictions, directory_of_target_fronts, bounding_boxes_directory)
+            _, results_gla_season = calculate_front_delineation_metric(complete_postprocessed_test_directory,
+                                                                       subset_of_predictions,
+                                                                       directory_of_target_fronts,
+                                                                       bounding_boxes_directory)
             results[glacier][season] = results_gla_season
 
     return results
+
 
 def visualizations(complete_postprocessed_test_directory, directory_of_target_fronts, directory_of_sar_images,
                    bounding_boxes_directory, visualizations_dir):
@@ -506,16 +762,23 @@ def visualizations(complete_postprocessed_test_directory, directory_of_target_fr
             dilation = 3
 
         if file_name.endswith('_front.png'):
-            post_processed_predicted_mask = cv2.imread(os.path.join(complete_postprocessed_test_directory, file_name).__str__(), cv2.IMREAD_GRAYSCALE)
-            post_processed_predicted_mask = mask_prediction_with_bounding_box(post_processed_predicted_mask, file_name[:-len('_front.png')]+'.png', bounding_boxes_directory)
-            post_processed_predicted_mask[post_processed_predicted_mask > 1] =1
+            post_processed_predicted_mask = cv2.imread(
+                os.path.join(complete_postprocessed_test_directory, file_name).__str__(), cv2.IMREAD_GRAYSCALE)
+            post_processed_predicted_mask = mask_prediction_with_bounding_box(post_processed_predicted_mask,
+                                                                              file_name[:-len('_front.png')] + '.png',
+                                                                              bounding_boxes_directory)
+            post_processed_predicted_mask[post_processed_predicted_mask > 1] = 1
             post_processed_predicted_mask_skeletonized = skeletonize(post_processed_predicted_mask)
             post_processed_predicted_mask = np.zeros(post_processed_predicted_mask_skeletonized.shape)
             post_processed_predicted_mask[post_processed_predicted_mask_skeletonized] = 255
-            matching_target_file = get_matching_out_of_folder(file_name[:-len('_front.png')]+'.png', directory_of_target_fronts)
-            target_front = cv2.imread(os.path.join(directory_of_target_fronts, matching_target_file).__str__(), cv2.IMREAD_GRAYSCALE)
-            matching_sar_file = get_matching_out_of_folder(file_name[:-len('_front.png')]+'.png', directory_of_sar_images)
-            sar_image = cv2.imread(os.path.join(directory_of_sar_images, matching_sar_file).__str__(), cv2.IMREAD_GRAYSCALE)
+            matching_target_file = get_matching_out_of_folder(file_name[:-len('_front.png')] + '.png',
+                                                              directory_of_target_fronts)
+            target_front = cv2.imread(os.path.join(directory_of_target_fronts, matching_target_file).__str__(),
+                                      cv2.IMREAD_GRAYSCALE)
+            matching_sar_file = get_matching_out_of_folder(file_name[:-len('_front.png')] + '.png',
+                                                           directory_of_sar_images)
+            sar_image = cv2.imread(os.path.join(directory_of_sar_images, matching_sar_file).__str__(),
+                                   cv2.IMREAD_GRAYSCALE)
         elif file_name.endswith('_zone.png'):
             continue
         elif file_name.endswith('_recon.png'):
@@ -524,10 +787,11 @@ def visualizations(complete_postprocessed_test_directory, directory_of_target_fr
             post_processed_predicted_mask = cv2.imread(
                 os.path.join(complete_postprocessed_test_directory, file_name).__str__(), cv2.IMREAD_GRAYSCALE)
             matching_target_file = get_matching_out_of_folder(file_name, directory_of_target_fronts)
-            target_front = cv2.imread(os.path.join(directory_of_target_fronts, matching_target_file).__str__(),cv2.IMREAD_GRAYSCALE)
+            target_front = cv2.imread(os.path.join(directory_of_target_fronts, matching_target_file).__str__(),
+                                      cv2.IMREAD_GRAYSCALE)
             matching_sar_file = get_matching_out_of_folder(file_name, directory_of_sar_images)
-            sar_image = cv2.imread(os.path.join(directory_of_sar_images, matching_sar_file).__str__(),cv2.IMREAD_GRAYSCALE)
-
+            sar_image = cv2.imread(os.path.join(directory_of_sar_images, matching_sar_file).__str__(),
+                                   cv2.IMREAD_GRAYSCALE)
 
         predicted_front = np.array(post_processed_predicted_mask)
         ground_truth_front = np.array(target_front)
@@ -539,10 +803,10 @@ def visualizations(complete_postprocessed_test_directory, directory_of_target_fr
         sar_image_rgb = skimage.color.gray2rgb(sar_image)
         sar_image_rgb = np.uint8(sar_image_rgb)
 
-        sar_image_rgb[predicted_front > 0] = [0, 255, 255]                # b, g, r
+        sar_image_rgb[predicted_front > 0] = [0, 255, 255]  # b, g, r
         sar_image_rgb[ground_truth_front > 0] = [255, 51, 51]
         correct_prediction = np.logical_and(predicted_front, ground_truth_front)
-        sar_image_rgb[correct_prediction > 0] = [255, 0, 255]        # [51, 255, 51]   # [0, 153, 0]
+        sar_image_rgb[correct_prediction > 0] = [255, 0, 255]  # [51, 255, 51]   # [0, 153, 0]
 
         # Insert Bounding Box
         matching_bounding_box_file = get_matching_out_of_folder(file_name, bounding_boxes_directory)
@@ -572,17 +836,21 @@ def visualizations(complete_postprocessed_test_directory, directory_of_target_fr
 
         cv2.imwrite(os.path.join(visualizations_dir, file_name), sar_image_rgb)
 
-def main(complete_test_directory, directory_of_complete_targets_zones, directory_of_complete_targets_fronts, directory_of_sar_images):
+
+def main(complete_test_directory, directory_of_complete_targets_zones, directory_of_complete_targets_fronts,
+         directory_of_sar_images):
     # ###############################################################################################
     # CALCULATE SEGMENTATION METRICS (IoU & Hausdorff Distance)
     # ###############################################################################################
-    complete_predicted_masks_zones = list(file for file in os.listdir(complete_test_directory) if file.endswith('_zone.png'))
-    complete_predicted_masks_fronts = list(file for file in os.listdir(complete_test_directory) if file.endswith('_front.png'))
+    complete_predicted_masks_zones = list(
+        file for file in os.listdir(complete_test_directory) if file.endswith('_zone.png'))
+    complete_predicted_masks_fronts = list(
+        file for file in os.listdir(complete_test_directory) if file.endswith('_front.png'))
     src = Path(directory_of_sar_images).parent.parent.parent
     bounding_boxes_directory = os.path.join(src, "data_raw", "bounding_boxes")
     results = {}
     # only on zone
-
+    """
     if len(complete_predicted_masks_zones) > 0:
         results_seg = calculate_segmentation_metrics('zones', complete_predicted_masks_zones, complete_test_directory,
                                       directory_of_complete_targets_zones,)
@@ -600,33 +868,35 @@ def main(complete_test_directory, directory_of_complete_targets_zones, directory
     src = Path(directory_of_sar_images).parent.parent.parent
     print(src)
     
-
+    
     if len(complete_predicted_masks_zones) > 0:
         post_processing('zones', complete_predicted_masks_zones, bounding_boxes_directory, complete_test_directory)
-    
+    """
     # ###############################################################################################
     # CALCULATE FRONT DELINEATION METRIC (Mean distance error)
     # ###############################################################################################
 
     if len(complete_predicted_masks_zones) > 0:
         print("Front delineation from ZONE post processed")
-        results_zone = front_delineation_metric('zone', complete_postprocessed_test_directory, directory_of_complete_targets_fronts, bounding_boxes_directory)
+        results_zone = front_delineation_metric('zone', complete_postprocessed_test_directory,
+                                                directory_of_complete_targets_fronts, bounding_boxes_directory)
         results['Zone_Delineation'] = results_zone
-
 
     if len(complete_predicted_masks_fronts) > 0:
         print("Front delineation from FRONT directly")
-        results_front = front_delineation_metric('front', complete_test_directory, directory_of_complete_targets_fronts, bounding_boxes_directory)
+        results_front = front_delineation_metric('front', complete_test_directory, directory_of_complete_targets_fronts,
+                                                 bounding_boxes_directory)
         results['Front_Delineation'] = results_front
 
-    results_file = open(complete_test_directory+'/eval_results.json', "w")
+    results_file = open(complete_test_directory + '/eval_results.json', "w")
     json.dump(results, results_file)
 
     # ###############################################################################################
     # MAKE VISUALIZATIONS
     # ###############################################################################################
     if len(complete_predicted_masks_zones) > 0:
-        visualizations(complete_postprocessed_test_directory, directory_of_complete_targets_fronts, directory_of_sar_images,
+        visualizations(complete_postprocessed_test_directory, directory_of_complete_targets_fronts,
+                       directory_of_sar_images,
                        bounding_boxes_directory, visualizations_dir)
 
     if len(complete_predicted_masks_fronts) > 0:
