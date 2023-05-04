@@ -696,7 +696,7 @@ def front_delineation_metric(modality, complete_postprocessed_test_directory, di
     fig.write_image("create_plots_new/output/error_satellite_%s.pdf"%modality, format='pdf')
 
     # Resolution subsetting
-    fig = px.box(None, points="all", template="plotly_white", log_x=True)
+    fig = px.box(None, points="all", template="plotly_white", log_x=True,height=300 )
     fig.add_trace(go.Box(x=list_of_mean_front_errors_without_nan, marker_color='orange', boxmean=True, boxpoints='all',
                          name='all', width=width))
     color = {20: G10[9], 17: G10[8], 7: G10[3]}
@@ -715,11 +715,15 @@ def front_delineation_metric(modality, complete_postprocessed_test_directory, di
                                                                     subset_of_predictions, directory_of_target_fronts,
                                                                     bounding_boxes_directory)
         fig.add_trace(
-            go.Box(x=all_errors, marker_color=color[res], boxmean=True, boxpoints='all', name=res, width=width))
+            go.Box(x=all_errors, marker_color=color[res], boxmean=True, boxpoints='all', name=str(res)+" m per pixel", width=width))
         results[res] = result_res
     fig.update_layout(showlegend=False, font=dict(family="Times New Roma", size=12))
-    fig.update_xaxes(title='Mean Distance Error [m]')
-    fig.update_layout(yaxis={'categoryorder': 'array', 'categoryarray': ['7', '17', '20', 'all']})
+    fig.update_xaxes(title='Mean Distance Error [m]', )
+    fig.update_yaxes(title='Resolution')
+    fig.update_layout(yaxis={'categoryorder': 'array', 'categoryarray': ['7 m per pixel', '17 m per pixel', '20 m per pixel', 'all']},
+                      xaxis={'showgrid': True, "showline": True,
+                             "tickvals": [10, 20, 50, 100, 200, 500, 1000, 2000, 5000],
+                             } )
     fig.update_traces(orientation='h')  # horizontal box plots
     fig.write_image("create_plots_new/output/error_resolution_%s.pdf"%modality, format='pdf')
 
