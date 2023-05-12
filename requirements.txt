@@ -16,3 +16,5 @@ astropy
 einops
 plotly
 imageio
+torch
+kaleido

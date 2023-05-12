@@ -31,7 +31,9 @@ setup(name='nnunet',
             "h5py~=3.8.0",
             "fil-finder~=1.7.2",
             "psutil~=5.9.4",
-            "image~=1.5.33"
+            "image~=1.5.33",
+            "kaleido"
+
       ],
       entry_points={
           'console_scripts': [

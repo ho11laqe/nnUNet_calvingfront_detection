@@ -31,8 +31,8 @@ def create_dict(list_of_samples):
 
 
 if __name__ == '__main__':
-    list_of_train_samples = os.listdir('/home/ho11laqe/PycharmProjects/data_raw/fronts/train')
-    list_of_test_samples = os.listdir('/home/ho11laqe/PycharmProjects/data_raw/fronts/test')
+    list_of_train_samples = os.listdir('../../data_raw/fronts/train')
+    list_of_test_samples = os.listdir('../../data_raw/fronts/test')
     list_of_samples = list_of_train_samples + list_of_test_samples
     list_of_glaciers = distribute_glacier(list_of_samples)
     list_dict = create_dict(list_of_samples)
