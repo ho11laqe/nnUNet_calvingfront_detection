@@ -854,7 +854,7 @@ def main(complete_test_directory, directory_of_complete_targets_zones, directory
     bounding_boxes_directory = os.path.join(src, "data_raw", "bounding_boxes")
     results = {}
     # only on zone
-    """
+    
     if len(complete_predicted_masks_zones) > 0:
         results_seg = calculate_segmentation_metrics('zones', complete_predicted_masks_zones, complete_test_directory,
                                       directory_of_complete_targets_zones,)
@@ -875,7 +875,7 @@ def main(complete_test_directory, directory_of_complete_targets_zones, directory
     
     if len(complete_predicted_masks_zones) > 0:
         post_processing('zones', complete_predicted_masks_zones, bounding_boxes_directory, complete_test_directory)
-    """
+    
     # ###############################################################################################
     # CALCULATE FRONT DELINEATION METRIC (Mean distance error)
     # ###############################################################################################
