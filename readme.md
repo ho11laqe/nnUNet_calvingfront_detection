@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/629052460.svg)](https://zenodo.org/doi/10.5281/zenodo.10168769)
+
 # Multi-Task Learning for Glacier Segmentation and Calving Front Prediction with the nnU-Net.
 
 This project contains the script for the experiments that are described in the paper "Out-of-the-box calving front detection method using deep-learning" by Herrmann et al. https://tc.copernicus.org/preprints/tc-2023-34/
